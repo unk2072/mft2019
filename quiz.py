@@ -12,7 +12,7 @@ from kivy.properties import StringProperty
 from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 
-# GUIテスト用のフラグ
+# GUIテストモード用のフラグ
 TEST_GUI = True
 
 # TELLOとの通信設定
@@ -156,15 +156,22 @@ class QuizApp(App):
 # 画像取得スレッド
 def capture_thread():
     global g_frame
-    # ストリーミング受信準備
-    addr = 'udp://' + HOST_LOCAL + ':' + str(PORT_VIDEO) + '?overrun_nonfatal=1&fifo_size=50000000'
-    cap = cv2.VideoCapture(addr)
+    if TEST_GUI:
+        # GUIテストモードはカメラを使う
+        cap = cv2.VideoCapture(0)
+    else:
+        # ストリーミング受信準備
+        addr = 'udp://' + HOST_LOCAL + ':' + str(PORT_VIDEO) + '?overrun_nonfatal=1&fifo_size=50000000'
+        cap = cv2.VideoCapture(addr)
     while cap.isOpened():
         _, g_frame = cap.read()
 
 
 # ステータス受信スレッド
 def state_thread():
+    if TEST_GUI:
+        # GUIテストモードはステータス受信しない
+        return
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((HOST_LOCAL, PORT_STATE))
     while True:
@@ -181,16 +188,15 @@ if __name__ == '__main__':
     sock.sendto(b'streamon', (HOST_TELLO, PORT_CMD))
     sock.close()
 
-    if not TEST_GUI:
-        # 画像取得スレッドを立ち上げる
-        th1 = threading.Thread(target=capture_thread)
-        th1.daemon = True
-        th1.start()
+    # 画像取得スレッドを立ち上げる
+    th1 = threading.Thread(target=capture_thread)
+    th1.daemon = True
+    th1.start()
 
-        # ステータス受信スレッドを立ち上げる
-        th2 = threading.Thread(target=state_thread)
-        th2.daemon = True
-        th2.start()
+    # ステータス受信スレッドを立ち上げる
+    th2 = threading.Thread(target=state_thread)
+    th2.daemon = True
+    th2.start()
 
     # アプリの起動
     QuizApp().run()
