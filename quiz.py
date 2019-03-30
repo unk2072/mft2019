@@ -99,7 +99,7 @@ class QuizApp(App):
 
     def build(self, **kwargs):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.title = "True/False Quiz of drone."
+        self.title = 'True/False Quiz of drone.'
         # ウィンドウサイズを設定
         Window.size = (960, 720)
         # ジョイスティックイベントを設定
@@ -153,9 +153,12 @@ class QuizApp(App):
         self.sock.sendto(cmd.encode(), (HOST_TELLO, PORT_CMD))
 
 
-# 画像取得スレッド
+# 画像処理スレッド
 def capture_thread():
     global g_frame
+    # カスケード分類器
+    cascade1 = cv2.CascadeClassifier('Circle_cascade.xml')
+    cascade2 = cv2.CascadeClassifier('Cross_cascade.xml')
     if TEST_GUI:
         # GUIテストモードはカメラを使う
         cap = cv2.VideoCapture(0)
@@ -165,6 +168,16 @@ def capture_thread():
         cap = cv2.VideoCapture(addr)
     while cap.isOpened():
         _, g_frame = cap.read()
+
+        # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
+        circle = cascade1.detectMultiScale(g_frame, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+        for (x, y, w, h) in circle:
+            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 255, 0), 16)
+
+        # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
+        circle = cascade2.detectMultiScale(g_frame, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+        for (x, y, w, h) in circle:
+            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 0, 255), 16)
 
 
 # ステータス受信スレッド
