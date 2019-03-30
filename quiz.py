@@ -61,7 +61,7 @@ class QuizWidget(Widget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        f = open('quiz.json', 'r')
+        f = open('quiz.json', 'r', encoding='utf-8')
         self.quiz_all = json.load(f)
         self.quiz_data = self.quiz_all[self.quiz_genre]
         self.text_question = self.quiz_data[self.quiz_num]['question']
