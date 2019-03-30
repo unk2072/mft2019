@@ -172,12 +172,12 @@ def capture_thread():
         # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
         circle = cascade1.detectMultiScale(g_frame, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in circle:
-            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 255, 0), 16)
+            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 255, 0), 3, cv2.LINE_AA)
 
         # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
         circle = cascade2.detectMultiScale(g_frame, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in circle:
-            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 0, 255), 16)
+            cv2.rectangle(g_frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
 
 
 # ステータス受信スレッド
