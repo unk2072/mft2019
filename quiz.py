@@ -159,15 +159,19 @@ def capture_thread():
     # カスケード分類器
     cascade1 = cv2.CascadeClassifier('Circle_cascade.xml')
     cascade2 = cv2.CascadeClassifier('Cross_cascade.xml')
+    cascade3 = cv2.CascadeClassifier('Plus_cascade.xml')
     if TEST_GUI:
         # GUIテストモードはカメラを使う
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
     else:
         # ストリーミング受信準備
         addr = 'udp://' + HOST_LOCAL + ':' + str(PORT_VIDEO) + '?overrun_nonfatal=1&fifo_size=50000000'
         cap = cv2.VideoCapture(addr)
     while cap.isOpened():
         _, frame = cap.read()
+        if frame is None:
+            continue
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
@@ -178,6 +182,11 @@ def capture_thread():
         # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
         cross = cascade2.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in cross:
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
+
+        # 格納されたフレームに対してカスケードファイルに基づいて Plus を検知
+        plus = cascade3.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+        for (x, y, w, h) in plus:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
 
         g_frame = frame
