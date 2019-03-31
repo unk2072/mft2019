@@ -193,7 +193,7 @@ def capture_thread():
     cascade3 = cv2.CascadeClassifier('Plus_cascade.xml')
     if TEST_GUI:
         # GUIテストモードはカメラを使う
-        cap = cv2.VideoCapture(1)
+        cap = cv2.VideoCapture(0)
     else:
         # ストリーミング受信準備
         addr = 'udp://' + HOST_LOCAL + ':' + str(PORT_VIDEO) + '?overrun_nonfatal=1&fifo_size=50000000'
