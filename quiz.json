@@ -2,45 +2,45 @@
   [
     {
       "question": "カカロットの名前の由来は「人参」である",
-      "anser": true
+      "answer": true
     },
     {
       "question": "近年劇場公開された「アリータ」\nその監督は「探検家」でもある",
-      "anser": true
+      "answer": true
     },
     {
       "question": "日本で話題となった「君の名は。」\n劇場公開されたのは「2017年」である",
-      "anser": false
+      "answer": false
     },
     {
       "question": "ドラゴンボールによって叶えられた願いは\n「人を生き返らせる」のみである",
-      "anser": false
+      "answer": false
     },
     {
       "question": "近年劇場公開された「ボヘミアン・ラプソディ」\nその主人公はロックバンド「Queen」である",
-      "anser": false
+      "answer": false
     }
   ],
   [
     {
       "question":"日本の祝日の中で１年の一番はじめ\nにある祝日は「元旦」である",
-      "anser":false
+      "answer":false
     },
     {
       "question":"平成の2つ前の和暦は「明治」である",
-      "anser":false
+      "answer":false
     },
     {
       "question":"２，３，５，７，９は「素数」である",
-      "anser":false
+      "answer":false
     },
     {
       "question":"一般的に潜水の時やプールの授業などで\nおこなわれる２人１組を「ペア」と呼ぶ",
-      "anser":false
+      "answer":false
     },
     {
       "question":"肉や魚を使わず植物性の材料だけで\n作る料理は「精進料理」である",
-      "anser":true
+      "answer":true
     }
   ]
 ]

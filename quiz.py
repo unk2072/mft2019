@@ -25,8 +25,13 @@ PORT_VIDEO = 11111
 # 画像表示用の変数
 g_frame = None
 
+# クイズ用の変数
+g_question = None
+g_answer = None
+g_result = None
+
 # クイズの設定
-QUIZ_TIMER = 10
+QUIZ_TIMER = 30
 
 
 # カメラ画像表示用クラス
@@ -64,8 +69,7 @@ class QuizWidget(Widget):
         f = open('quiz.json', 'r', encoding='utf-8')
         self.quiz_all = json.load(f)
         self.quiz_data = self.quiz_all[self.quiz_genre]
-        self.text_question = self.quiz_data[self.quiz_num]['question']
-        self.text_timer = f'残り{self.timer}秒'
+        self._reset_quiz()
         Clock.schedule_interval(self.on_countdown, 1.0)
 
     def on_countdown(self, dt):
@@ -84,10 +88,20 @@ class QuizWidget(Widget):
             self.quiz_data = self.quiz_all[self.quiz_genre]
             self.quiz_num = 0
 
-        # 問題文を更新し、タイマーをリセットする
+        # クイズ用の変数をリセット
+        global g_answer
+        global g_result
+        g_answer = None
+        g_result = None
+        self._reset_quiz()
+
+    def _reset_quiz(self):
+        # 問題文・回答を更新し、タイマーをリセットする
+        global g_question
+        g_question = self.quiz_data[self.quiz_num]['answer']
+        self.text_question = self.quiz_data[self.quiz_num]['question']
         self.timer = QUIZ_TIMER
         self.text_timer = f'残り{self.timer}秒'
-        self.text_question = self.quiz_data[self.quiz_num]['question']
 
 
 # アプリのクラス
@@ -102,6 +116,8 @@ class QuizApp(App):
         self.title = 'True/False Quiz of drone.'
         # ウィンドウサイズを設定
         Window.size = (960, 720)
+        # キーボードイベントを設定
+        Window.bind(on_key_down=self.on_key_down)
         # ジョイスティックイベントを設定
         Window.bind(on_joy_axis=self.on_joy_axis)
         Window.bind(on_joy_button_down=self.on_joy_button_down)
@@ -111,6 +127,10 @@ class QuizApp(App):
 
     def on_stop(self):
         self.sock.close()
+
+    def on_key_down(self, win, key, keycode, codepoint, modifier):
+        if keycode == 40:
+            self._set_relust()
 
     def on_joy_axis(self, win, stickid, axisid, value):
         # PS3コントローラ(axisid)
@@ -146,6 +166,15 @@ class QuizApp(App):
             self.sock.sendto(b'takeoff', (HOST_TELLO, PORT_CMD))
         elif buttonid == 14:
             self.sock.sendto(b'land', (HOST_TELLO, PORT_CMD))
+        elif buttonid == 15:
+            self._set_relust()
+
+    def _set_relust(self):
+        global g_question
+        global g_answer
+        global g_result
+        if g_answer is not None:
+            g_result = g_answer is g_question
 
     def update(self, dt):
         cmd = 'rc {0} {1} {2} {3}'.format(self.axis_a, self.axis_b, self.axis_c, self.axis_d)
@@ -156,6 +185,8 @@ class QuizApp(App):
 # 画像処理スレッド
 def capture_thread():
     global g_frame
+    global g_answer
+    global g_result
     # カスケード分類器
     cascade1 = cv2.CascadeClassifier('Circle_cascade.xml')
     cascade2 = cv2.CascadeClassifier('Cross_cascade.xml')
@@ -172,24 +203,59 @@ def capture_thread():
         if frame is None:
             continue
 
+        answer = None
+        max_area = 0
+        # フレーム画像をグレースケールに変換
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
         circle = cascade1.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in circle:
+            area = w * h
+            if max_area < area:
+                answer = True
+                max_area = area
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3, cv2.LINE_AA)
 
         # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
         cross = cascade2.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in cross:
+            area = w * h
+            if max_area < area:
+                answer = False
+                max_area = area
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
 
         # 格納されたフレームに対してカスケードファイルに基づいて Plus を検知
         plus = cascade3.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
         for (x, y, w, h) in plus:
+            area = w * h
+            if max_area < area:
+                answer = False
+                max_area = area
             cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
 
+        # 現在の回答選択状況を表示
+        if answer is True:
+            cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 255, 0), 3, cv2.LINE_AA)
+        elif answer is False:
+            cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 0, 255), 3, cv2.LINE_AA)
+
+        # 現在の正解状況を表示
+        if g_result is True:
+            size = min(frame.shape[:1])//2-50
+            cv2.circle(frame, (frame.shape[1]//2, frame.shape[0]//2), size, (0, 255, 0), 30)
+        elif g_result is False:
+            size = min(frame.shape[:1])//2-50
+            x0 = frame.shape[1]//2 - size
+            x1 = frame.shape[1]//2 + size
+            y0 = frame.shape[0]//2 - size
+            y1 = frame.shape[0]//2 + size
+            cv2.line(frame, (x0, y0), (x1, y1), (0, 0, 255), 30)
+            cv2.line(frame, (x1, y0), (x0, y1), (0, 0, 255), 30)
+
         g_frame = frame
+        g_answer = answer
 
 
 # ステータス受信スレッド
