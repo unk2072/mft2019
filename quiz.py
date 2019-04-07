@@ -13,7 +13,7 @@ from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 
 # GUIテストモード用のフラグ
-TEST_GUI = True
+TEST_GUI = False
 
 # TELLOとの通信設定
 HOST_TELLO = '192.168.10.1'
@@ -40,15 +40,75 @@ class TelloCamera(Image):
         super().__init__(**kwargs)
         # テクスチャを最大化するように設定
         self.allow_stretch = True
+        # カスケード分類器
+        self.cascade1 = cv2.CascadeClassifier('Circle_cascade.xml')
+        self.cascade2 = cv2.CascadeClassifier('Cross_cascade.xml')
+        self.cascade3 = cv2.CascadeClassifier('Plus_cascade.xml')
         # 更新間隔を設定
         Clock.schedule_interval(self.update, 1.0 / 30.0)
 
     def update(self, dt):
         global g_frame
+        global g_answer
+        global g_result
+
         if g_frame is not None:
+            frame = g_frame
+            answer = None
+            max_area = 0
+            # フレーム画像をグレースケールに変換
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
+            circle = self.cascade1.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+            for (x, y, w, h) in circle:
+                area = w * h
+                if max_area < area:
+                    answer = True
+                    max_area = area
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3, cv2.LINE_AA)
+
+            # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
+            cross = self.cascade2.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+            for (x, y, w, h) in cross:
+                area = w * h
+                if max_area < area:
+                    answer = False
+                    max_area = area
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
+
+            # 格納されたフレームに対してカスケードファイルに基づいて Plus を検知
+            plus = self.cascade3.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
+            for (x, y, w, h) in plus:
+                area = w * h
+                if max_area < area:
+                    answer = False
+                    max_area = area
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
+
+            # 現在の回答選択状況を表示
+            g_answer = answer
+            if answer is True:
+                cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 255, 0), 3, cv2.LINE_AA)
+            elif answer is False:
+                cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 0, 255), 3, cv2.LINE_AA)
+
+            # 現在の正解状況を表示
+            if g_result is True:
+                size = min(frame.shape[:1])//2-50
+                cv2.circle(frame, (frame.shape[1]//2, frame.shape[0]//2), size, (0, 255, 0), 30)
+            elif g_result is False:
+                size = min(frame.shape[:1])//2-50
+                x0 = frame.shape[1]//2 - size
+                x1 = frame.shape[1]//2 + size
+                y0 = frame.shape[0]//2 - size
+                y1 = frame.shape[0]//2 + size
+                cv2.line(frame, (x0, y0), (x1, y1), (0, 0, 255), 30)
+                cv2.line(frame, (x1, y0), (x0, y1), (0, 0, 255), 30)
+
             # OpenCVの画像データをテクスチャに変換
-            buf = cv2.flip(g_frame, 0).tostring()
-            image_texture = Texture.create(size=(g_frame.shape[1], g_frame.shape[0]), colorfmt='bgr')
+            buf = cv2.flip(frame, 0).tostring()
+            image_texture = Texture.create(size=(frame.shape[1], frame.shape[0]), colorfmt='bgr')
             image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
             # テクスチャを更新
             self.texture = image_texture
@@ -187,10 +247,6 @@ def capture_thread():
     global g_frame
     global g_answer
     global g_result
-    # カスケード分類器
-    cascade1 = cv2.CascadeClassifier('Circle_cascade.xml')
-    cascade2 = cv2.CascadeClassifier('Cross_cascade.xml')
-    cascade3 = cv2.CascadeClassifier('Plus_cascade.xml')
     if TEST_GUI:
         # GUIテストモードはカメラを使う
         cap = cv2.VideoCapture(0)
@@ -202,60 +258,7 @@ def capture_thread():
         _, frame = cap.read()
         if frame is None:
             continue
-
-        answer = None
-        max_area = 0
-        # フレーム画像をグレースケールに変換
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # 格納されたフレームに対してカスケードファイルに基づいて Circle を検知
-        circle = cascade1.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
-        for (x, y, w, h) in circle:
-            area = w * h
-            if max_area < area:
-                answer = True
-                max_area = area
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3, cv2.LINE_AA)
-
-        # 格納されたフレームに対してカスケードファイルに基づいて Cross を検知
-        cross = cascade2.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
-        for (x, y, w, h) in cross:
-            area = w * h
-            if max_area < area:
-                answer = False
-                max_area = area
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
-
-        # 格納されたフレームに対してカスケードファイルに基づいて Plus を検知
-        plus = cascade3.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=3, minSize=(20, 20))
-        for (x, y, w, h) in plus:
-            area = w * h
-            if max_area < area:
-                answer = False
-                max_area = area
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 3, cv2.LINE_AA)
-
-        # 現在の回答選択状況を表示
-        if answer is True:
-            cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 255, 0), 3, cv2.LINE_AA)
-        elif answer is False:
-            cv2.rectangle(frame, (0, 0), (frame.shape[1], frame.shape[0]), (0, 0, 255), 3, cv2.LINE_AA)
-
-        # 現在の正解状況を表示
-        if g_result is True:
-            size = min(frame.shape[:1])//2-50
-            cv2.circle(frame, (frame.shape[1]//2, frame.shape[0]//2), size, (0, 255, 0), 30)
-        elif g_result is False:
-            size = min(frame.shape[:1])//2-50
-            x0 = frame.shape[1]//2 - size
-            x1 = frame.shape[1]//2 + size
-            y0 = frame.shape[0]//2 - size
-            y1 = frame.shape[0]//2 + size
-            cv2.line(frame, (x0, y0), (x1, y1), (0, 0, 255), 30)
-            cv2.line(frame, (x1, y0), (x0, y1), (0, 0, 255), 30)
-
         g_frame = frame
-        g_answer = answer
 
 
 # ステータス受信スレッド
