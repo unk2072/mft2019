@@ -13,7 +13,7 @@ from kivy.uix.image import Image
 from kivy.uix.widget import Widget
 
 # GUIテストモード用のフラグ
-TEST_GUI = False
+TEST_GUI = True
 
 # TELLOとの通信設定
 HOST_TELLO = '192.168.10.1'
@@ -245,8 +245,6 @@ class QuizApp(App):
 # 画像処理スレッド
 def capture_thread():
     global g_frame
-    global g_answer
-    global g_result
     if TEST_GUI:
         # GUIテストモードはカメラを使う
         cap = cv2.VideoCapture(0)
@@ -276,11 +274,12 @@ def state_thread():
 if __name__ == '__main__':
     LabelBase.register(DEFAULT_FONT, 'ipaexg.ttf')
 
-    # SDKモード移行、ストリーミング開始
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(b'command', (HOST_TELLO, PORT_CMD))
-    sock.sendto(b'streamon', (HOST_TELLO, PORT_CMD))
-    sock.close()
+    if not TEST_GUI:
+        # SDKモード移行、ストリーミング開始
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.sendto(b'command', (HOST_TELLO, PORT_CMD))
+        sock.sendto(b'streamon', (HOST_TELLO, PORT_CMD))
+        sock.close()
 
     # 画像取得スレッドを立ち上げる
     th1 = threading.Thread(target=capture_thread)
