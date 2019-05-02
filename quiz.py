@@ -7,6 +7,7 @@ import time
 
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.core.audio import SoundLoader
 from kivy.core.text import DEFAULT_FONT, LabelBase
 from kivy.core.window import Window
 from kivy.graphics.texture import Texture
@@ -16,7 +17,7 @@ from kivy.uix.widget import Widget
 
 # GUIテストモード用のフラグ
 TEST_GUI = True
-CAM_ID = 1
+CAM_ID = 0
 
 # TELLOとの通信設定
 HOST_TELLO = '192.168.10.1'
@@ -52,6 +53,10 @@ class TelloCamera(Image):
         self.allow_stretch = True
         # 更新間隔を設定
         Clock.schedule_interval(self.update, 1.0 / 30.0)
+        # BGMの再生
+        sound = SoundLoader.load('bgm.mp3')
+        if sound:
+            sound.play()
 
     def update(self, dt):
         global g_display
