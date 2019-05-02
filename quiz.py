@@ -2,13 +2,12 @@ import cv2
 import json
 import random
 import socket
-import subprocess
 import threading
 import time
 
+import pygame.mixer
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.core.audio import SoundLoader
 from kivy.core.text import DEFAULT_FONT, LabelBase
 from kivy.core.window import Window
 from kivy.graphics.texture import Texture
@@ -19,9 +18,6 @@ from kivy.uix.widget import Widget
 # GUIテストモード用のフラグ
 TEST_GUI = True
 CAM_ID = 0
-
-# 音楽再生をコマンドで実行するフラグ
-IS_USE_MPG123 = True
 
 # TELLOとの通信設定
 HOST_TELLO = '192.168.10.1'
@@ -58,13 +54,9 @@ class TelloCamera(Image):
         # 更新間隔を設定
         Clock.schedule_interval(self.update, 1.0 / 30.0)
         # BGMの再生
-        if IS_USE_MPG123:
-            subprocess.Popen(['mpg123', '-Z', 'bgm.mp3'])
-        else:
-            sound = SoundLoader.load('bgm.mp3')
-            if sound:
-                sound.loop = True
-                sound.play()
+        pygame.mixer.init()
+        pygame.mixer.music.load('bgm.mp3')
+        pygame.mixer.music.play(-1)
 
     def update(self, dt):
         global g_display
@@ -213,13 +205,9 @@ class QuizApp(App):
         if g_answer is not None:
             g_result = g_answer is g_question
             # 正解・不正解の効果音を再生
-            sound = 'correct.mp3' if g_result else 'wrong.mp3'
-            if IS_USE_MPG123:
-                subprocess.Popen(['mpg123', sound])
-            else:
-                sound = SoundLoader.load(sound)
-                if sound:
-                    sound.play()
+            path = 'correct.wav' if g_result else 'wrong.wav'
+            sound = pygame.mixer.Sound(path)
+            sound.play()
 
     def update(self, dt):
         cmd = 'rc {0} {1} {2} {3}'.format(self.axis_a, self.axis_b, self.axis_c, self.axis_d)
