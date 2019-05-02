@@ -42,5 +42,71 @@
       "question":"肉や魚を使わず植物性の材料だけで\n作る料理は「精進料理」である",
       "answer":true
     }
+  ],
+  [
+    {
+      "question": "3問目(○)",
+      "answer": true
+    },
+    {
+      "question": "3問目(○)",
+      "answer": true
+    },
+    {
+      "question": "3問目(X)",
+      "answer": false
+    },
+    {
+      "question": "3問目(X)",
+      "answer": false
+    },
+    {
+      "question": "3問目(X)",
+      "answer": false
+    }
+  ],
+  [
+    {
+      "question": "4問目(○)",
+      "answer": true
+    },
+    {
+      "question": "4問目(○)",
+      "answer": true
+    },
+    {
+      "question": "4問目(X)",
+      "answer": false
+    },
+    {
+      "question": "4問目(X)",
+      "answer": false
+    },
+    {
+      "question": "4問目(X)",
+      "answer": false
+    }
+  ],
+  [
+    {
+      "question": "5問目(○)",
+      "answer": true
+    },
+    {
+      "question": "5問目(○)",
+      "answer": true
+    },
+    {
+      "question": "5問目(X)",
+      "answer": false
+    },
+    {
+      "question": "5問目(X)",
+      "answer": false
+    },
+    {
+      "question": "5問目(X)",
+      "answer": false
+    }
   ]
 ]
