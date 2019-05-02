@@ -19,6 +19,9 @@ from kivy.uix.widget import Widget
 TEST_GUI = True
 CAM_ID = 0
 
+# 音楽再生をコマンドで実行するフラグ
+IS_USE_MPG123 = True
+
 # TELLOとの通信設定
 HOST_TELLO = '192.168.10.1'
 PORT_CMD = 8889
@@ -54,9 +57,13 @@ class TelloCamera(Image):
         # 更新間隔を設定
         Clock.schedule_interval(self.update, 1.0 / 30.0)
         # BGMの再生
-        sound = SoundLoader.load('bgm.mp3')
-        if sound:
-            sound.play()
+        if IS_USE_MPG123:
+            import subprocess
+            subprocess.Popen(['mpg123', '-Z', 'bgm.mp3'])
+        else:
+            sound = SoundLoader.load('bgm.mp3')
+            if sound:
+                sound.play()
 
     def update(self, dt):
         global g_display
