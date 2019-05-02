@@ -2,6 +2,7 @@ import cv2
 import json
 import random
 import socket
+import subprocess
 import threading
 import time
 
@@ -58,11 +59,11 @@ class TelloCamera(Image):
         Clock.schedule_interval(self.update, 1.0 / 30.0)
         # BGMの再生
         if IS_USE_MPG123:
-            import subprocess
             subprocess.Popen(['mpg123', '-Z', 'bgm.mp3'])
         else:
             sound = SoundLoader.load('bgm.mp3')
             if sound:
+                sound.loop = True
                 sound.play()
 
     def update(self, dt):
@@ -211,6 +212,14 @@ class QuizApp(App):
         global g_result
         if g_answer is not None:
             g_result = g_answer is g_question
+            # 正解・不正解の効果音を再生
+            sound = 'correct.mp3' if g_result else 'wrong.mp3'
+            if IS_USE_MPG123:
+                subprocess.Popen(['mpg123', sound])
+            else:
+                sound = SoundLoader.load(sound)
+                if sound:
+                    sound.play()
 
     def update(self, dt):
         cmd = 'rc {0} {1} {2} {3}'.format(self.axis_a, self.axis_b, self.axis_c, self.axis_d)
